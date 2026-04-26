@@ -106,7 +106,7 @@ def _get_macd_signal(close):
     if len(close) < 26:
         return None
 
-    macd, signal_line, histogram = talib.MACD(close, fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=slowperiod)
+    macd, signal_line, histogram = talib.MACD(close, fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
 
     # Берем последние 2 значения
     current_macd = macd[-1]
