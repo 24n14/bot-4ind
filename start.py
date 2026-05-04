@@ -1,23 +1,8 @@
-import logging
 import config
 from trading import main_trading_loop
 from exchange import exchange_start
-
+from log import logger
 # Настройка логирования с DEBUG уровнем для детального просмотра
-logging.basicConfig(
-    level=logging.DEBUG,  # Изменено с INFO на DEBUG для видимости всех операций
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler("bot_history.log", encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
-
-logger = logging.getLogger('start')
-
-# Отключаем чрезмерно подробные логи от библиотек
-logging.getLogger('ccxt').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 if __name__ == "__main__":
     try:

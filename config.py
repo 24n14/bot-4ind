@@ -41,8 +41,8 @@ EMA_50_PERIOD = 50  # период EMA для тренда
 ATR_PERIOD = 14  # период ATR для волатильности
 SMA_obv = 5
 # ===== ПАРАМЕТРЫ MA/EMA =====
-MA = 20
-EMA = 100
+MA = 2
+EMA = 50
 # ===== ПАРАМЕТРЫ MACD =====
 FAST_macd = 12
 SLOW_macd = 26

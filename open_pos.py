@@ -1,10 +1,7 @@
-import logging
 import config
-#import time
+from log import logger
 from pybit.unified_trading import HTTP
-
-logger = logging.getLogger(__name__)
-
+#from start import min_amount
 # === Инициализация Pybit ===
 if config.DEMO_TRADING:
     session_bybit = HTTP(
@@ -43,7 +40,10 @@ def execute_trade(exchange, symbol, side):
         amount = config.AMOUNT
 
         # Проверка минимальной стоимости
-        min_cost = market.get('limits', {}).get('cost', {}).get('min')
+        #min_cost = market.get('limits', {}).get('cost', {}).get('min')
+        min_amount = market['limits']['amount']['min']
+        min_cost = entry_price * min_amount
+        logger.info(f"Минимальная стоимость лота {min_cost}")
         if min_cost is None:
             logger.warning(f"⚠️ Минимальная стоимость не определена для {symbol}")
             min_cost = 10

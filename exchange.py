@@ -1,9 +1,8 @@
 import ccxt
 import config
-import logging
 import requests
+from log import logger
 
-logger = logging.getLogger(__name__)
 
 
 
@@ -44,9 +43,13 @@ def exchange_start():
         # Устанавливаем демо-режим, если нужен
         if config.DEMO_TRADING:
             exchange.urls['api'] = exchange.urls['demotrading']
-            logger.info("🧪 ДЕМО-РЕЖИМ АКТИВИРОВАН")
+            result = exchange.privateGetV5UserQueryApi()
+            uid = result['result']['userID']
+            logger.info(f"🧪 ДЕМО-РЕЖИМ АКТИВИРОВАН UID {uid}")
         else:
-            logger.info("⚠️ РЕАЛЬНАЯ ТОРГОВЛЯ!")
+            result = exchange.privateGetV5UserQueryApi()
+            uid = result['result']['userID']
+            logger.info(f"⚠️ РЕАЛЬНАЯ ТОРГОВЛЯ! UID{uid}")
 
         # Тест авторизации и получение баланса
         balance = exchange.fetch_balance()

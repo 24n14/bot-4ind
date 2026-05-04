@@ -1,11 +1,11 @@
 import numpy as np
 import talib
-import logging
+#import logging
 
 import config
 from config import INDICATOR_WEIGHTS
-
-logger = logging.getLogger(__name__)
+from log import logger
+#logger = logging.getLogger(__name__)
 # переменные MACD
 fastperiod = config.FAST_macd
 slowperiod = config.SLOW_macd
@@ -15,18 +15,7 @@ fastk_period=config.FASTK
 slowk_period=config.SLOWK
 slowd_period=config.SLOWD
 def calculate_indicator_signals(high, low, close, volume):
-    """
-    Расчитывает сигналы для всех четырех индикаторов.
 
-    Returns:
-        dict: Словарь с сигналами каждого индикатора:
-            {
-                'ma_crossover': 'bullish'/'bearish'/None,
-                'macd': 'bullish'/'bearish'/None,
-                'stochastic': 'bullish'/'bearish'/None,
-                'obv': 'bullish'/'bearish'/None
-            }
-    """
     signals = {}
 
     try:
@@ -61,39 +50,24 @@ def calculate_indicator_signals(high, low, close, volume):
 
 
 def _get_ma_crossover_signal(close):
-    """
-    Индикатор #1: Пересечение MA и EMA
-
-    Бычий сигнал: MA пересекает EMA снизу вверх
-    Медвежий сигнал: MA пересекает EMA сверху вниз
-    """
-    # EMA самый большой период, берем его количество свечей для расчета
     if len(close) < config.EMA:
         return None
 
     ma = talib.SMA(close, timeperiod=config.MA)
     ema = talib.EMA(close, timeperiod=config.EMA)
 
-    # Берем последние 2 значения для определения пересечения
     current_ma = ma[-1]
     current_ema = ema[-1]
-    prev_ma = ma[-2]
-    prev_ema = ema[-2]
 
-    # Проверяем пересечение
-    if np.isnan(current_ma) or np.isnan(current_ema) or \
-            np.isnan(prev_ma) or np.isnan(prev_ema):
+    if np.isnan(current_ma) or np.isnan(current_ema):
         return None
-        logger.warning(f"Ошибка не хватает данных для MA/EMA")
-    # MA было ниже EMA, теперь выше → BULLISH
-    if prev_ma <= prev_ema and current_ma > current_ema:
+
+    if current_ma > current_ema:
         return 'bullish'
-
-    # MA было выше EMA, теперь ниже → BEARISH
-    elif prev_ma >= prev_ema and current_ma < current_ema:
+    elif current_ma < current_ema:
         return 'bearish'
-
-    return 'hold'
+    else:
+        return 'hold'
 
 
 def _get_macd_signal(close):
@@ -210,6 +184,7 @@ def calculate_consensus_signal(signals):
     """
     MIN_CONSENSUS_WEIGHT = config.MIN_CONSENSUS_WEIGHT  # Минимум 2 индикатора для сигнала
     MIN_PARTICIPATION = config.MIN_PARTICIPATION  # Минимум 3 индикатора должны работать
+
     # Инициализируем счетчики
     bullish_weight = 0.0
     bearish_weight = 0.0
@@ -256,33 +231,36 @@ def calculate_consensus_signal(signals):
     if active_indicators < MIN_PARTICIPATION:
         consensus_signal = 'hold'
         logger.info(f"⏸️  HOLD консенсус (недостаточно активных индикаторов: {active_indicators} < {MIN_PARTICIPATION})")
+
     elif bullish_weight > bearish_weight and bullish_weight >= MIN_CONSENSUS_WEIGHT:
         consensus_signal = 'bullish'
-        logger.info(f"✅ BULLISH консенсус ({bullish_weight} vs {bearish_weight})")
+        if bullish_weight == 4:
+            logger.info(f"🔥 ABSOLUTE BULLISH CONSENSUS !!!")
+        else:
+            logger.info(f"✅ BULLISH консенсус ({bullish_weight} vs {bearish_weight})")
+
     elif bearish_weight > bullish_weight and bearish_weight >= MIN_CONSENSUS_WEIGHT:
         consensus_signal = 'bearish'
-        logger.info(f"❌ BEARISH консенсус ({bearish_weight} vs {bullish_weight})")
+        if bearish_weight == 4:
+            logger.info(f"🔥 ABSOLUTE BEARISH CONSENSUS !!!")
+        else:
+            logger.info(f"❌ BEARISH консенсус ({bearish_weight} vs {bullish_weight})")
+
     else:
         consensus_signal = 'hold'
         logger.info(f"⏸️  HOLD консенсус | B={bullish_weight} S={bearish_weight} | Мин.порог={MIN_CONSENSUS_WEIGHT}")
 
-    details['consensus'] = consensus_signal
-    return consensus_signal, details
+    is_absolute = (bullish_weight == 4) or (bearish_weight == 4)
+    details['consensus'] = consensus_signal  # ← теперь всегда определена
+    return consensus_signal, details, is_absolute
 
 
 def get_indicator_analysis(high, low, close, volume):
-    """
-    Главная функция для получения консенсус-сигнала.
-    Объединяет расчет сигналов и определение консенсуса.
-
-    Returns:
-        tuple: (consensus_signal, details)
-    """
 
     # Получаем сигналы от всех индикаторов
     signals = calculate_indicator_signals(high, low, close, volume)
 
     # Рассчитываем консенсус-сигнал
-    consensus_signal, details = calculate_consensus_signal(signals)
+    consensus_signal, details, is_absolute = calculate_consensus_signal(signals)
 
-    return consensus_signal, details
+    return consensus_signal, details, is_absolute

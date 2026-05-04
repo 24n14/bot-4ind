@@ -1,7 +1,7 @@
-import logging
+#import logging
 import time
-
-logger = logging.getLogger(__name__)
+from log import logger
+#logger = logging.getLogger(__name__)
 
 
 def get_timeframe_seconds(tf):
