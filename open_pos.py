@@ -40,7 +40,6 @@ def execute_trade(exchange, symbol, side):
         amount = config.AMOUNT
 
         # Проверка минимальной стоимости
-        #min_cost = market.get('limits', {}).get('cost', {}).get('min')
         min_amount = market['limits']['amount']['min']
         min_cost = entry_price * min_amount
         logger.info(f"Минимальная стоимость лота {min_cost}")
