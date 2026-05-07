@@ -1,5 +1,6 @@
 #import numpy as np
 import pandas as pd
+import config
 
 
 def _atr(df: pd.DataFrame, period: int = 14) -> float:
@@ -27,9 +28,14 @@ def is_near_historical_high(
     current_price: float,
     df: pd.DataFrame,
     levels_data: dict,
-    atr_multiplier: float = 1.5,
-    extreme_window: int = 100
+    atr_multiplier: float = None,
+    extreme_window: int = None
 ) -> dict:
+
+    if atr_multiplier is None:
+        atr_multiplier = config.ATR_MULTIPLIER
+    if extreme_window is None:
+        extreme_window = config.EXTREME_WINDOW
 
     atr = _atr(df)
     tolerance = atr * atr_multiplier
@@ -74,9 +80,14 @@ def is_near_historical_low(
     current_price: float,
     df: pd.DataFrame,
     levels_data: dict,
-    atr_multiplier: float = 1.5,
-    extreme_window: int = 100
+    atr_multiplier: float = None,
+    extreme_window: int = None
 ) -> dict:
+
+    if atr_multiplier is None:
+        atr_multiplier = config.ATR_MULTIPLIER
+    if extreme_window is None:
+        extreme_window = config.EXTREME_WINDOW
 
     atr = _atr(df)
     tolerance = atr * atr_multiplier
