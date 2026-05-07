@@ -59,11 +59,11 @@ def execute_trade(exchange, symbol, side):
         if side == 'buy':
             stop_loss_price = entry_price * (1 - sl_percent/100)
             take_profit_price = entry_price * (1 + tp_percent/100)
-            ts_trigger_price = take_profit_price
+            ts_trigger_price = config.TS_TRIGGER_PRICE
         else:
             stop_loss_price = entry_price * (1 + sl_percent/100)
             take_profit_price = entry_price * (1 - tp_percent/100)
-            ts_trigger_price = take_profit_price
+            ts_trigger_price = config.TS_TRIGGER_PRICE
 
         logger.info(f"📊 Расчетные цены:")
         logger.info(f"   Вход: {entry_price:.2f}")
@@ -115,7 +115,7 @@ def execute_trade(exchange, symbol, side):
                 if ts_response.get("retCode") == 0:
                     remaining = 100 - int(tpsl_size)
                     logger.info(
-                        f"✅ Трейлинг-стоп на {remaining}% | Дист: {config.TRAILING_STOP_DISTANCE} | Актив: {ts_trigger_price:.2f}")
+                        f"✅ Трейлинг-стоп на {remaining}% | Дист: {config.TRAILING_STOP_DISTANCE} | Актив: {config.ACTIVE_PRICE:.2f}")
                 else:
                     logger.error(f"❌ Ошибка трейлинг-стопа: {ts_response.get('retMsg')}")
 

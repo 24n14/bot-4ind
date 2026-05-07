@@ -19,25 +19,22 @@ CATEGORY = 'linear'
 AMOUNT = 0.01
 TIMEFRAME = '5m'
 LIMIT = 200  # должен быть больше чем параметры MA/EMA
-
 STOP_LOSS = 0.7
 TAKE_PROFIT = 0.7
-TRAILING_STOP_DISTANCE = 150
+TRAILING_STOP_DISTANCE = 300
 
-TPSL_SIZE = '50'
+TS_TRIGGER_PRICE = 'entry_price' # 'entry_price' , 'take_profit_price' ,
+TPSL_SIZE = '100' # использует тейкпрофит, это его доля
 LEVERAGE = 10
 MIN_AMOUNT = 0.001
-
-# ===== ПАРАМЕТРЫ АНАЛИЗА ДИВЕРГЕНЦИИ =====
-
 MIN_CONFIDENCE = 0.5  # минимальная уверенность для входа
-#MIN_CONFIDENCE_REVERSAL = 0.7  # уверенность для разворота позиции
 
 # ===== ПАРАМЕТРЫ OBV =====
 OBV_SMA_PERIOD = 5  # период сглажив��ния OBV
 EMA_50_PERIOD = 50  # период EMA для тренда
 ATR_PERIOD = 14  # период ATR для волатильности
 SMA_obv = 5
+
 # ===== ПАРАМЕТРЫ MA/EMA =====
 MA = 2
 EMA = 50
