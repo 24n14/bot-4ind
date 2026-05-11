@@ -66,11 +66,11 @@ def find_support_resistance_levels(
     #   Кластеры ВЫШЕ poc → resistance (мешают лонгу)
     #   Кластеры НИЖЕ poc → support    (мешают шорту)
     cluster_resistance = [lvl for lvl in cluster_levels if lvl >= poc]
-    cluster_support    = [lvl for lvl in cluster_levels if lvl <  poc]
+    cluster_support = [lvl for lvl in cluster_levels if lvl < poc]
 
     # ── 5. Объединяем уровни по направлению ──────────────────────────
     resistance_levels = sorted(set(cluster_resistance + [r1, r2, r3]))
-    support_levels    = sorted(set(cluster_support    + [s1, s2, s3]))
+    support_levels = sorted(set(cluster_support + [s1, s2, s3]))
 
     all_levels = sorted(set(
         cluster_levels + [poc, pp, r1, r2, r3, s1, s2, s3]

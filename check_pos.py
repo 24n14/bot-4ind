@@ -3,38 +3,72 @@ from log import logger
 
 symbol = config.SYMBOL
 
+def _fetch_account_realized_pnl(exchange, symbol: str | None = None) -> float | None:
+    logger.info("[DEBUG] Вход в _fetch_account_realized_pnl")
+    """
+    Возвращает суммарный Realized PnL аккаунта (как его считает Bybit).
+    Если передан symbol — берём только по этому инструменту.
+    """
+    try:
+        # ccxt: для Bybit деривативов здесь придут позиции с сырыми полями из v5
+        positions = exchange.fetch_positions([symbol]) if symbol else exchange.fetch_positions()
+
+        total_pnl = 0.0
+        found = False
+
+        for pos in positions:
+            info = pos.get('info', {}) or {}
+            logger.debug(f"info позиции: {info}")
+
+            # Bybit v5:
+            #  - cumRealisedPnl — кумулятивный реализованный PnL по позиции
+            #  - curRealisedPnl — реализованный PnL по текущему холду
+            pnl_str = (
+                info.get('cumRealisedPnl')
+                or info.get('curRealisedPnl')
+                or info.get('realisedPnl')   # на всякий случай разные варианты написания
+                or info.get('realizedPnl')
+            )
+
+            if pnl_str is None:
+                continue
+
+            try:
+                total_pnl += float(pnl_str)
+                found = True
+            except (TypeError, ValueError):
+                continue
+
+        return total_pnl if found else None
+
+    except Exception as e:
+        logger.warning(f"⚠️ Не удалось получить Realized PnL аккаунта: {e}")
+        return None
+
 
 def _fetch_last_pnl(exchange, symbol):
-    """Запрашивает P&L последней закрытой позиции"""
+    """Realized PnL по последней закрытой сделке/позиции по symbol."""
     try:
-        # Bybit: fetch_closed_orders или fetch_my_trades
         trades = exchange.fetch_my_trades(symbol, limit=1)
-        if trades:
-            pnl = trades[-1].get('info', {}).get('closedPnl') or trades[-1].get('info', {}).get('realizedPnl')
-            return float(pnl) if pnl is not None else None
-    except Exception as e:
-        logger.warning(f"⚠️  Не удалось получить P&L: {e}")
-    return None
-'''
-#запасной вариант
-def _fetch_last_pnl(exchange, symbol):
-    """Запрашивает P&L последней закрытой позиции через Bybit"""
-    try:
-        # Bybit: closed P&L через приватный endpoint
-        response = exchange.private_get_v5_position_closed_pnl({
-            'category': 'linear',
-            'symbol': symbol.replace('/', '').replace(':USDT', ''),
-            'limit': 1
-        })
-        items = response.get('result', {}).get('list', [])
-        if items:
-            pnl = items[0].get('closedPnl')
-            return float(pnl) if pnl is not None else None
-    except Exception as e:
-        logger.warning(f"⚠️  Не удалось получить P&L: {e}")
-    return None
+        if not trades:
+            return None
 
-'''
+        info = trades[-1].get('info', {}) or {}
+        logger.debug(f"info последней сделки: {info}")
+
+        pnl_str = (
+                info.get('closedPnl')
+                or info.get('realisedPnl')
+                or info.get('realizedPnl')
+                or info.get('trade_profit')
+        )
+
+        return float(pnl_str) if pnl_str is not None else None
+
+    except Exception as e:
+        logger.warning(f"⚠️ Не удалось получить Realized PnL последней сделки: {e}")
+        return None
+
 
 def _fetch_balance(exchange):
     """Запрашивает актуальный баланс"""
@@ -75,11 +109,18 @@ def has_open_position(exchange, symbol):
         else:
             logger.info(f"📭 [{uid}] Открытых позиций по {symbol} нет")
             pnl = _fetch_last_pnl(exchange, symbol)
+            realized_pnl = _fetch_account_realized_pnl(exchange, symbol)
             if pnl is not None:
                 icon = "🟢" if pnl >= 0 else "🔴"
                 logger.info(f"{icon} [{uid}] P&L последней позиции: {pnl:+.4f} USDT")
             else:
                 logger.info(f"📊 [{uid}] P&L последней позиции: нет данных")
+
+            if realized_pnl is not None:
+                icon = "🟢" if realized_pnl >= 0 else "🔴"
+                logger.info(f"{icon} [{uid}] ОБЩИЙ REALIZED_PNL: {realized_pnl:+.4f} USDT")
+            else:
+                logger.info(f"📊 [{uid}] ОБЩИЙ REALIZED_PNL: нет данных")
 
             # Актуальный баланс
             balance = _fetch_balance(exchange)

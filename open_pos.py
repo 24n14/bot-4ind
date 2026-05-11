@@ -60,11 +60,17 @@ def execute_trade(exchange, symbol, side):
         if side == 'buy':
             stop_loss_price = entry_price * (1 - sl_percent/100)
             take_profit_price = entry_price * (1 + tp_percent/100)
-            ts_trigger_price = config.TS_TRIGGER_PRICE
         else:
             stop_loss_price = entry_price * (1 + sl_percent/100)
             take_profit_price = entry_price * (1 - tp_percent/100)
-            ts_trigger_price = config.TS_TRIGGER_PRICE
+
+        # ✅ Преобразование строкового параметра конфига в цену
+        if config.TS_TRIGGER_PRICE == 'entry_price':
+            ts_trigger_price = entry_price
+        elif config.TS_TRIGGER_PRICE == 'take_profit_price':
+            ts_trigger_price = take_profit_price
+        else:
+            ts_trigger_price = entry_price  # дефолт
 
         logger.info(f"📊 Расчетные цены:")
         logger.info(f"   Вход: {entry_price:.2f}")
@@ -96,7 +102,7 @@ def execute_trade(exchange, symbol, side):
         logger.info(f"📈 {side.upper()} {amount} {symbol} @ {entry_price:.2f}")
 
         # === 5. Установка трейлинг-стопа через Pybit ===
-        #time.sleep(0.5)
+        # time.sleep(0.5)
         from check_pos import has_open_position
         has_position, position_data = has_open_position(exchange, symbol)
         if has_position:
@@ -104,19 +110,28 @@ def execute_trade(exchange, symbol, side):
             try:
                 bybit_symbol = symbol.replace('/', '').split(':')[0]
 
+                # ✅ Расчет activePrice в зависимости от направления позиции
+                # Для LONG (buy): activePrice должен быть выше entry_price
+                # Для SHORT (sell): activePrice должен быть выше entry_price (но ниже текущей цены)
+                if side == 'buy':
+                    active_price = ts_trigger_price * (1 + 0.1/100)  # На 0.1% выше для LONG
+                else:  # sell
+                    active_price = ts_trigger_price * (1 - 0.1/100)  # На 0.1% ниже для SHORT
+
                 ts_response = session_bybit.set_trading_stop(
                     category="linear",
                     symbol=bybit_symbol,
                     positionIdx=0,
                     trailingStop=str(config.TRAILING_STOP_DISTANCE),
-                    activePrice=str(ts_trigger_price),
-                    #tpslMode="Partial"
+                    activePrice=str(active_price),
+                    # tpslMode="Partial"
                 )
 
                 if ts_response.get("retCode") == 0:
-                    remaining = 100 - int(tpsl_size)
+                    # remaining = 100 - int(tpsl_size)
+                    remaining = config.REMAINING
                     logger.info(
-                        f"✅ Трейлинг-стоп на {remaining}% | Дист: {config.TRAILING_STOP_DISTANCE} | Актив: {config.ACTIVE_PRICE:.2f}")
+                        f"✅ Трейлинг-стоп на {remaining}% | Дист: {config.TRAILING_STOP_DISTANCE} | Актив: {active_price:.2f}")
                 else:
                     logger.error(f"❌ Ошибка трейлинг-стопа: {ts_response.get('retMsg')}")
 

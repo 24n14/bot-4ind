@@ -24,7 +24,8 @@ TAKE_PROFIT = 0.7
 TRAILING_STOP_DISTANCE = 300
 
 TS_TRIGGER_PRICE = 'entry_price'  # 'entry_price' , 'take_profit_price' ,
-TPSL_SIZE = '100'  # использует тейкпрофит, это его доля
+TPSL_SIZE = 100  # использует тейкпрофит, это его доля
+REMAINING = 100  # использует трейлинг стоп
 LEVERAGE = 10
 MIN_AMOUNT = 0.001
 MIN_CONFIDENCE = 0.5  # минимальная уверенность для входа

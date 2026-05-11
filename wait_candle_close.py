@@ -1,7 +1,5 @@
-#import logging
 import time
 from log import logger
-#logger = logging.getLogger(__name__)
 
 
 def get_timeframe_seconds(tf):
@@ -37,10 +35,6 @@ def wait_for_candle_close(exchange, symbol, timeframe):
             # Используем время биржи, а не локальное
             exchange_time_sec = exchange_time_ms / 1000
             wait_time = candle_close_time - exchange_time_sec
-
-            #logger.debug(f"⏰ Время биржи: {exchange_time_sec:.1f}, "
-            #             f"свеча закроется в: {candle_close_time:.1f}, "
-            #             f"ожидание: {wait_time:.1f} сек")
 
             if wait_time > 1:
                 # Добавляем 0.5 сек запаса на обработку данных

@@ -66,9 +66,11 @@ def main_trading_loop(exchange):
 
                 # 6. Генерируем сигнал
                 consensus_signal, details, is_absolute = get_indicator_analysis(high, low, close, volume)
+
                 # 7. Проверяем наличие позиций
                 has_pos, pos_data = has_open_position(exchange, config.SYMBOL)
                 signal = consensus_signal
+
                 # ── НАДЗИРАЮЩИЙ ФИЛЬТР ─────────────────────────────────────────────[...]
                 current_price = float(close[-1])
 
