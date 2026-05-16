@@ -29,6 +29,7 @@ def find_support_resistance_levels(
     )
 
     # ── 2. Volume Profile — POC ───────────────────────────────────────
+    # ── 2. Volume Profile — POC ───────────────────────────────────────
     price_min = df[price_col_low].min()
     price_max = df[price_col_high].max()
     bins = 50
@@ -36,13 +37,17 @@ def find_support_resistance_levels(
     bin_volumes = np.zeros(bins)
 
     for _, row in df.iterrows():
+        candle_lo = row[price_col_low]
+        candle_hi = row[price_col_high]
+        candle_range = candle_hi - candle_lo
+
         for i in range(bins):
             lo_bin = bin_edges[i]
             hi_bin = bin_edges[i + 1]
-            candle_lo = row[price_col_low]
-            candle_hi = row[price_col_high]
+
+            # Используем скалярные значения
             overlap = max(0.0, min(candle_hi, hi_bin) - max(candle_lo, lo_bin))
-            candle_range = candle_hi - candle_lo
+
             if candle_range > 0:
                 bin_volumes[i] += row[price_col_volume] * (overlap / candle_range)
 

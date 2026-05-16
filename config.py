@@ -56,7 +56,8 @@ INDICATOR_WEIGHTS = {
     'ma_crossover': 1.0,      # Вес пересечения MA/EMA
     'macd': 1.0,              # Вес MACD
     'stochastic': 1.0,        # Вес Stochastic
-    'obv': 1.0                # Вес OBV тренда
+    'obv': 1.0,               # Вес OBV тренда
+    'position_filter': 1.0    # Вес фильтра позиции
 }
 
 # ===== ДИАПАЗОН ДЛЯ БЛОКИРОВКИ ВБЛИЗИ ЭКСТРЕМУМОВ И УРОВНЕЙ ======
