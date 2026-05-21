@@ -112,11 +112,11 @@ def calculate_consensus_signal(signals):
     details['bearish_total'] = bearish_weight
 
     # Логируем голосование
-    logger.info(f"Консенсус-голосование:")
+    logger.info(f"📊 Консенсус-голосование:")
     for ind_name, vote_info in details['votes'].items():
-        logger.info(f"  {ind_name}: {vote_info['signal']} (вес: {vote_info['weight']})")
-    logger.info(f"  BULLISH сумма: {bullish_weight} | BEARISH сумма: {bearish_weight}")
-    logger.info(f"  Активных индикаторов: {active_indicators}")
+        logger.info(f"📣 {ind_name}: {vote_info['signal']} (вес:{vote_info['weight']})")
+    logger.info(f"BULLISH сумма: {bullish_weight}|BEARISH сумма:{bearish_weight}")
+    logger.info(f"📊 Активных индикаторов: {active_indicators}")
 
     # Проверяем, достаточно ли индикаторов работает
     if active_indicators < MIN_PARTICIPATION:
@@ -128,14 +128,14 @@ def calculate_consensus_signal(signals):
         if bullish_weight == 5:
             logger.info(f"🔥 ABSOLUTE BULLISH CONSENSUS !!!")
         else:
-            logger.info(f"✅ BULLISH консенсус ({bullish_weight} vs {bearish_weight})")
+            logger.info(f"📊📈 BULLISH консенсус ({bullish_weight} vs {bearish_weight})")
 
     elif bearish_weight > bullish_weight and bearish_weight >= MIN_CONSENSUS_WEIGHT:
         consensus_signal = 'bearish'
         if bearish_weight == 5:
             logger.info(f"🔥 ABSOLUTE BEARISH CONSENSUS !!!")
         else:
-            logger.info(f"❌ BEARISH консенсус ({bearish_weight} vs {bullish_weight})")
+            logger.info(f"📊📉 BEARISH консенсус ({bearish_weight} vs {bullish_weight})")
 
     else:
         consensus_signal = 'hold'

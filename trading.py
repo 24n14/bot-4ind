@@ -71,13 +71,13 @@ def main_trading_loop(exchange):
                     if signal is not None:
                         logger.info(f"📊 Сигнал: {signal.upper()}")
                         if signal == 'bullish':
-                            logger.info(f"🟢 ВХОД В LONG")
+                            logger.info(f"📈 ВХОД В LONG")
                             execute_trade(exchange, symbol, 'buy')
                         elif signal == 'bearish':
-                            logger.info(f"🔴 ВХОД В SHORT")
+                            logger.info(f"📉 ВХОД В SHORT")
                             execute_trade(exchange, symbol, 'sell')
                         else:
-                            logger.info(f"⚠️ HOLD")
+                            logger.info(f"⏸️ HOLD")
                     else:
                         logger.debug("📭 Сигнала нет")
 
@@ -85,13 +85,13 @@ def main_trading_loop(exchange):
                     if is_absolute:
                         if (signal == 'bearish' and pos_data['side'] == 'long') or \
                                 (signal == 'bullish' and pos_data['side'] == 'short'):
-                            logger.info(f"🔄 Обнаружен сигнал разворота")
+                            logger.info(f"🔍📈📉 Обнаружен сигнал разворота")
                             if signal == 'bullish':
-                                logger.info(f"🟢 РАЗВОРОТ В LONG")
+                                logger.info(f"📉📈 РАЗВОРОТ В LONG")
                                 execute_trade(exchange, symbol, 'buy')
                                 execute_trade(exchange, symbol, 'buy')
                             elif signal == 'bearish':
-                                logger.info(f"🔴 РАЗВОРОТ В SHORT")
+                                logger.info(f"📈📉 РАЗВОРОТ В SHORT")
                                 execute_trade(exchange, symbol, 'sell')
                                 execute_trade(exchange, symbol, 'sell')
                     else:

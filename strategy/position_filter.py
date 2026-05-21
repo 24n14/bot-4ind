@@ -43,7 +43,7 @@ def is_near_historical_high(current_price: float, df: pd.DataFrame, levels_data:
 
     # Проверяем, насколько цена близка к историческим уровням
     dist_to_high = hist_high - current_price
-    dist_to_low = current_price - hist_low
+    # dist_to_low = current_price - hist_low
 
     # Проверяем уровни поддержки/сопротивления
     cluster_resistance = [lvl for lvl in levels_data['cluster_levels'] if lvl > current_price]
@@ -52,14 +52,22 @@ def is_near_historical_high(current_price: float, df: pd.DataFrame, levels_data:
     near_resistance = _near_level(current_price, cluster_resistance, tolerance)
     near_support = _near_level(current_price, cluster_support, tolerance)
 
-    # Проверяем, находится ли цена в пределах tolerance от уровня
-    near_hist_high = 0 <= dist_to_high <= tolerance
-    near_hist_low = 0 <= dist_to_low <= tolerance
-
-    if near_hist_high or near_resistance:
+    # Используем dist_to_high для проверки близости к историческому максимуму
+    # if dist_to_high <= tolerance and dist_to_high >= 0:
+    if 0 <= dist_to_high <= tolerance:
         return {'blocked': True, 'reason': f'Цена близка к историческому максимуму {hist_high:.2f}'}
+    elif near_resistance:
+        return {'blocked': True, 'reason': f'Цена близка к уровню сопротивления {cluster_resistance}'}
     else:
         return {'blocked': False, 'reason': 'Цена не близка к историческому максимуму'}
+
+    # Проверяем, находится ли цена в пределах tolerance от уровня
+    # near_hist_high = 0 <= dist_to_high <= tolerance
+    # near_hist_low = 0 <= dist_to_low <= tolerance
+    # if near_hist_high or near_resistance:
+    #    return {'blocked': True, 'reason': f'Цена близка к историческому максимуму {hist_high:.2f}'}
+    # else:
+    #    return {'blocked': False, 'reason': 'Цена не близка к историческому максимуму'}
 
 
 def is_near_historical_low(current_price: float, df: pd.DataFrame, levels_data: dict, atr_multiplier: float = None, extreme_window: int = None) -> dict:
@@ -80,7 +88,7 @@ def is_near_historical_low(current_price: float, df: pd.DataFrame, levels_data: 
     hist_high, hist_low = _rolling_extremes(df, window=extreme_window)
 
     # Проверяем, насколько цена близка к историческим уровням
-    dist_to_high = hist_high - current_price
+    # dist_to_high = hist_high - current_price
     dist_to_low = current_price - hist_low
 
     # Проверяем уровни поддержки/сопротивления
@@ -90,14 +98,22 @@ def is_near_historical_low(current_price: float, df: pd.DataFrame, levels_data: 
     near_resistance = _near_level(current_price, cluster_resistance, tolerance)
     near_support = _near_level(current_price, cluster_support, tolerance)
 
-    # Проверяем, находится ли цена в пределах tolerance от уровня
-    near_hist_high = 0 <= dist_to_high <= tolerance
-    near_hist_low = 0 <= dist_to_low <= tolerance
-
-    if near_hist_low or near_support:
+    # Используем dist_to_low для проверки близости к историческому минимуму
+    # if dist_to_low <= tolerance and dist_to_low >= 0:
+    if 0 <= dist_to_low <= tolerance:
         return {'blocked': True, 'reason': f'Цена близка к историческому минимуму {hist_low:.2f}'}
+    elif near_support:
+        return {'blocked': True, 'reason': f'Цена близка к уровню поддержки {cluster_support}'}
     else:
         return {'blocked': False, 'reason': 'Цена не близка к историческому минимуму'}
+
+    # Проверяем, находится ли цена в пределах tolerance от уровня
+    # near_hist_high = 0 <= dist_to_high <= tolerance
+    # near_hist_low = 0 <= dist_to_low <= tolerance
+    # if near_hist_low or near_support:
+    #    return {'blocked': True, 'reason': f'Цена близка к историческому минимуму {hist_low:.2f}'}
+    # else:
+    #    return {'blocked': False, 'reason': 'Цена не близка к историческому минимуму'}
 
 
 def get_position_filter_signal(

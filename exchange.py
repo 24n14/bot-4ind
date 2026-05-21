@@ -52,7 +52,7 @@ def exchange_start():
         # Тест авторизации и получение баланса
         balance = exchange.fetch_balance()
         usdt_balance = balance.get('USDT', {}).get('free', 0)
-        logger.info(f"✅ АВТОРИЗАЦИЯ УСПЕШНА! Баланс: {usdt_balance} USDT")
+        logger.info(f"✅ АВТОРИЗАЦИЯ УСПЕШНА! 💰 Баланс: {usdt_balance} USDT")
 
         return exchange
 
