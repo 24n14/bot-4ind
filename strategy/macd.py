@@ -2,20 +2,16 @@ import numpy as np
 import talib
 import config
 
-# переменные MACD
 fastperiod = config.FAST_macd
 slowperiod = config.SLOW_macd
 signalperiod = config.SIGNAL_macd
-def _get_macd_signal(close):
-    """
-    Индикатор #2: MACD
 
-    Приоритет сигналов:
-    1. Пересечения (самый сильный сигнал)
-    2. Направление гистограммы + положение MACD
-    3. Положение MACD относительно нуля и сигнальной
+def _get_macd_signal(close, lookback=50):
     """
-    if len(close) < 26:
+    MACD с анализом последних N свечей (по умолчанию 50)
+    """
+    min_required = max(26, lookback)
+    if len(close) < min_required:
         return None
 
     macd, signal_line, histogram = talib.MACD(
@@ -29,49 +25,61 @@ def _get_macd_signal(close):
     current_macd = macd[-1]
     current_signal = signal_line[-1]
     current_histogram = histogram[-1]
-    prev_macd = macd[-2]
-    prev_signal = signal_line[-2]
-    prev_histogram = histogram[-2]
 
-    # Проверяем на NaN
-    if np.isnan(current_macd) or np.isnan(current_signal) or \
-            np.isnan(prev_macd) or np.isnan(prev_signal):
+    if np.isnan(current_macd) or np.isnan(current_signal):
         return None
 
-    # 1. ПРОВЕРКА ПЕРЕСЕЧЕНИЙ (наивысший приоритет)
-    # MACD пересекает сигнальную снизу вверх → BULLISH
-    if prev_macd <= prev_signal and current_macd > current_signal:
-        return 'bullish'
+    # === НОВЫЙ БЛОК: анализ за последние lookback свечей ===
+    hist_window = histogram[-lookback:]
+    macd_window = macd[-lookback:]
+    signal_window = signal_line[-lookback:]
 
-    # MACD пересекает сигнальную сверху вниз → BEARISH
-    if prev_macd >= prev_signal and current_macd < current_signal:
+    # Убираем NaN
+    valid_mask = ~np.isnan(hist_window) & ~np.isnan(macd_window) & ~np.isnan(signal_window)
+    hist_window = hist_window[valid_mask]
+    macd_window = macd_window[valid_mask]
+    signal_window = signal_window[valid_mask]
+
+    if len(hist_window) < 5:
+        return None
+
+    # 1. Сила тренда гистограммы (сколько свечей подряд растёт/падает)
+    hist_diff = np.diff(hist_window)
+    bullish_hist_bars = np.sum(hist_diff > 0)
+    bearish_hist_bars = np.sum(hist_diff < 0)
+
+    # 2. Сколько свечей MACD выше сигнальной
+    macd_above_signal = np.sum(macd_window > signal_window)
+    macd_below_signal = np.sum(macd_window < signal_window)
+
+    # === Основная логика с учётом истории ===
+
+    # Сильное пересечение (как раньше)
+    if macd[-2] <= signal_line[-2] and current_macd > current_signal:
+        return 'bullish'
+    if macd[-2] >= signal_line[-2] and current_macd < current_signal:
         return 'bearish'
 
-    # 2. ПРОВЕРКА ТРЕНДА ПО ГИСТОГРАММЕ (второй приоритет)
-    # Гистограмма растёт → BULLISH (если MACD выше сигнальной)
-    if current_histogram > prev_histogram and current_macd > current_signal:
+    # Гистограмма устойчиво растёт + MACD выше сигнальной
+    if bullish_hist_bars > len(hist_diff) * 0.65 and current_macd > current_signal:
         return 'bullish'
 
-    # Гистограмма падает → BEARISH (если MACD ниже сигнальной)
-    if current_histogram < prev_histogram and current_macd < current_signal:
+    # Гистограмма устойчиво падает + MACD ниже сигнальной
+    if bearish_hist_bars > len(hist_diff) * 0.65 and current_macd < current_signal:
         return 'bearish'
 
-    # 3. ПРОВЕРКА ПОЛОЖЕНИЯ MACD (третий приоритет)
-    # MACD выше сигнальной И выше нуля И гистограмма положительная → BULLISH
-    if current_macd > current_signal and current_macd > 0 and current_histogram > 0:
+    # MACD уверенно выше сигнальной большую часть окна
+    if macd_above_signal > len(macd_window) * 0.7 and current_macd > 0:
         return 'bullish'
 
-    # MACD ниже сигнальной И ниже нуля И гистограмма отрицательная → BEARISH
-    if current_macd < current_signal and current_macd < 0 and current_histogram < 0:
+    # MACD уверенно ниже сигнальной большую часть окна
+    if macd_below_signal > len(macd_window) * 0.7 and current_macd < 0:
         return 'bearish'
 
-    # 4. СЛАБЫЕ СИГНАЛЫ (четвёртый приоритет)
-    # MACD выше сигнальной, но гистограмма падает → слабый BULLISH (только если выше нуля)
-    if current_macd > current_signal and current_macd > 0 and current_histogram < prev_histogram:
-        return 'hold'  # Слишком слабый сигнал для входа
-
-    # MACD ниже сигнальной, но гистограмма растёт → слабый BEARISH (только если ниже нуля)
-    if current_macd < current_signal and current_macd < 0 and current_histogram > prev_histogram:
-        return 'hold'  # Слишком слабый сигнал для входа
+    # Слабые сигналы
+    if current_macd > current_signal and current_macd > 0:
+        return 'hold'
+    if current_macd < current_signal and current_macd < 0:
+        return 'hold'
 
     return 'hold'
