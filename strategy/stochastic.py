@@ -1,22 +1,17 @@
 import numpy as np
 import talib
 import config
+
 fastk_period = config.FASTK
 slowk_period = config.SLOWK
 slowd_period = config.SLOWD
-def _get_stochastic_signal(high, low, close):
-    """
-    Индикатор #3: Stochastic Oscillator
 
-    Бычий сигнал:
-    - %K пересекает %D снизу вверх в зоне перепродажи (<20)
-    - %K > %D и обе линии в зоне перепродажи (<20) — установившийся бычий
-
-    Медвежий сигнал:
-    - %K пересекает %D сверху вниз в зоне перекупленности (>80)
-    - %K < %D и обе линии в зоне перекупленности (>80) — установившийся медвежий
+def _get_stochastic_signal(high, low, close, lookback=50):
     """
-    if len(close) < 14:
+    Stochastic Oscillator с анализом тренда за последние N свечей
+    """
+    min_required = max(14, lookback)
+    if len(close) < min_required:
         return None
 
     slowk, slowd = talib.STOCH(
@@ -26,50 +21,46 @@ def _get_stochastic_signal(high, low, close):
         slowd_period=slowd_period
     )
 
-    # Берём последние значения
     current_k = slowk[-1]
     current_d = slowd[-1]
-    prev_k = slowk[-2]
-    prev_d = slowd[-2]
 
-    if np.isnan(current_k) or np.isnan(current_d) or \
-            np.isnan(prev_k) or np.isnan(prev_d):
+    if np.isnan(current_k) or np.isnan(current_d):
         return None
 
-    # 1. МОМЕНТ ПЕРЕСЕЧЕНИЯ (самый сильный сигнал)
-    # %K пересекает %D снизу вверх в зоне перепродажи → BULLISH
+    # Берём последние lookback значений
+    k_slice = slowk[-lookback:]
+    d_slice = slowd[-lookback:]
+
+    # Считаем статистику за период
+    k_above_d = np.sum(k_slice > d_slice)
+    oversold_count = np.sum(k_slice < 20)
+    overbought_count = np.sum(k_slice > 80)
+    k_trend = np.mean(np.diff(k_slice[-10:])) if len(k_slice) > 10 else 0  # тренд за последние 10 баров
+
+    # 1. СИЛЬНЫЙ СИГНАЛ — пересечение в зоне
+    prev_k = slowk[-2]
+    prev_d = slowd[-2]
     if prev_k <= prev_d and current_k > current_d and current_k < 20:
         return 'bullish'
-
-    # %K пересекает %D сверху вниз в зоне перекупленности → BEARISH
     if prev_k >= prev_d and current_k < current_d and current_k > 80:
         return 'bearish'
 
-    # 2. УСТАНОВИВШИЙСЯ ТРЕНД (после пересечения)
-    # %K выше %D и обе линии в зоне перепродажи (<20) → BULLISH
-    if current_k > current_d and current_k < 20 and current_d < 20:
+    # 2. УСТАНОВИВШИЙСЯ ТРЕНД (смотрим на lookback)
+    if current_k > current_d and oversold_count > lookback * 0.6:
         return 'bullish'
-
-    # %K ниже %D и обе линии в зоне перекупленности (>80) → BEARISH
-    if current_k < current_d and current_k > 80 and current_d > 80:
+    if current_k < current_d and overbought_count > lookback * 0.6:
         return 'bearish'
 
-    # 3. ВЫХОД ИЗ ЗОНЫ (дополнительный сигнал)
-    # %K выходит из зоны перепродажи вверх (>20) → BULLISH
+    # 3. ВЫХОД ИЗ ЗОНЫ
     if prev_k < 20 and current_k > 20 and current_k > current_d:
         return 'bullish'
-
-    # %K выходит из зоны перекупленности вниз (<80) → BEARISH
     if prev_k > 80 and current_k < 80 and current_k < current_d:
         return 'bearish'
 
-    # 4. НАПРАВЛЕНИЕ ДВИЖЕНИЯ (слабый сигнал)
-    # %K и %D растут и находятся ниже 50 → потенциальный BULLISH
-    if current_k > prev_k and current_d > prev_d and current_k < 50:
+    # 4. НАПРАВЛЕНИЕ ДВИЖЕНИЯ (учитываем тренд за период)
+    if k_trend > 0 and current_k < 50 and k_above_d > lookback * 0.55:
         return 'bullish'
-
-    # %K и %D падают и находятся выше 50 → потенциальный BEARISH
-    if current_k < prev_k and current_d < prev_d and current_k > 50:
+    if k_trend < 0 and current_k > 50 and k_above_d < lookback * 0.45:
         return 'bearish'
 
     return 'hold'
